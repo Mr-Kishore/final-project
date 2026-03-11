@@ -1,0 +1,17 @@
+# Core dependencies
+python-dotenv>=1.0.0
+ollama>=0.1.0
+
+# GUI dependencies
+streamlit>=1.31.0
+pandas>=1.5.0
+
+# Development and testing dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Optional: For better JSON handling and validation
+# jsonschema>=4.0.0
+
+# Optional: For enhanced logging
+# colorlog>=6.0.0
