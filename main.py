@@ -1,16 +1,8 @@
-#!/usr/bin/env python3
-"""
-Conversational Data Analysis System - Main entry point.
-
-This module provides the main entry point for the Conversational Data Analysis System application.
-It can be used to run the GUI or individual components.
-"""
 
 import argparse
 import json
 from pathlib import Path
 from src.core import parse_chat, is_system_message, save_messages_to_json, filter_and_insert_messages
-from src.gui import main as gui_main
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -40,6 +32,7 @@ def run_parser():
 
 def run_llm():
     """Run the LLM extractor."""
+    from src.llm import extract_opportunities
     print("🤖 Starting LLM opportunity extractor...")
     extract_opportunities()
     print("✅ Opportunity extraction completed")
@@ -47,16 +40,16 @@ def run_llm():
 
 def main():
     """Main entry point with CLI argument parsing."""
-    parser = argparse.ArgumentParser(description='Conversational Data Analysis System')
-    parser.add_argument('--gui', action='store_true', help='Launch GUI application')
+    parser = argparse.ArgumentParser(
+        description='Conversational Data Analysis System',
+        epilog='To launch the web UI, run: streamlit run src/gui/streamlit_app.py'
+    )
     parser.add_argument('--parse', action='store_true', help='Parse chat file and save to database')
     parser.add_argument('--llm', action='store_true', help='Run LLM extractor')
-    
+
     args = parser.parse_args()
-    
-    if args.gui:
-        gui_main()
-    elif args.parse:
+
+    if args.parse:
         run_parser()
     elif args.llm:
         run_llm()
