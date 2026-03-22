@@ -1,20 +1,23 @@
 import os
 import sqlite3
-from datetime import datetime
-import json
 from .models import DatabaseSchema
 
+
 class DatabaseManager:
+    """Manages SQLite database operations for the Conversational Data Analysis System.
+    
+    The database stores LLM-extracted opportunities only.
+    Raw parsed messages are stored in chat.json, not the database.
+    """
+
     def __init__(self, db_path="data/conversational_analysis.db"):
         self.db_path = db_path
         self.connection = None
         self.cursor = None
-        
-        # Ensure data directory exists
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        
+
     def connect(self):
-        """Connect to SQLite database"""
+        """Open a connection to the SQLite database."""
         try:
             self.connection = sqlite3.connect(self.db_path)
             self.cursor = self.connection.cursor()
@@ -23,100 +26,106 @@ class DatabaseManager:
         except sqlite3.Error as e:
             print(f" Database connection failed: {e}")
             return False
-        
+
     def close(self):
-        """Close database connection"""
+        """Close the database connection."""
         if self.connection:
             self.connection.close()
             print(" Database connection closed")
-    
+
     def create_table_if_not_exists(self):
-        """Create the messages table if it doesn't exist"""
+        """Create the opportunities table and indexes if they don't exist."""
         try:
-            self.cursor.execute(DatabaseSchema.CREATE_RAW_TABLE)
+            self.cursor.execute(DatabaseSchema.CREATE_OPPORTUNITIES_TABLE)
             self.connection.commit()
-            print(" Table created/verified successfully")
+            DatabaseSchema.create_all_indexes(self.cursor)
+            self.connection.commit()
+            print(" Opportunities table created/verified successfully")
             return True
         except sqlite3.Error as e:
             print(f" Error creating table: {e}")
             return False
-    
-    def insert_messages(self, messages):
-        """Insert messages into database"""
-        if not messages:
+
+    def insert_opportunities(self, opportunities):
+        """Insert LLM-extracted opportunities into the database.
+        
+        Args:
+            opportunities: list of dicts with keys:
+                domain/topic, location, start_date, duration, mode, pay, contact
+        
+        Returns:
+            Number of records inserted.
+        """
+        if not opportunities:
             return 0
-            
+
         try:
-            # Prepare data for insertion
             data_to_insert = []
-            for msg in messages:
-                date_str = msg.get('date', '')
-                time_str = msg.get('time', '')
-                author = msg.get('author', '')
-                content = msg.get('text', '')
-                
-                data_to_insert.append((date_str, time_str, author, content))
-            
-            # Insert in batch
+            for opp in opportunities:
+                data_to_insert.append((
+                    opp.get("domain/topic") or None,
+                    opp.get("location") or None,
+                    opp.get("start_date") or None,
+                    opp.get("duration") or None,
+                    opp.get("mode") or None,
+                    opp.get("pay") or None,
+                    opp.get("contact") or None,
+                ))
+
             self.cursor.executemany(
-                "INSERT INTO messages (date, time, author, content) VALUES (?, ?, ?, ?)",
-                data_to_insert
+                """INSERT INTO opportunities
+                   (domain_topic, location, start_date, duration, mode, pay, contact)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                data_to_insert,
             )
             self.connection.commit()
-            
-            inserted_count = self.cursor.rowcount
-            print(f" Inserted {inserted_count} messages into database")
+            inserted_count = len(data_to_insert)
+            print(f" Inserted {inserted_count} opportunities into database")
             return inserted_count
-            
+
         except sqlite3.Error as e:
-            print(f" Error inserting messages: {e}")
+            print(f" Error inserting opportunities: {e}")
             return 0
-    
+
     def get_table_stats(self):
-        """Get statistics about the messages table"""
+        """Print summary statistics about stored opportunities."""
         try:
-            # Get total count
-            self.cursor.execute("SELECT COUNT(*) FROM messages")
-            total_messages = self.cursor.fetchone()[0]
-            
-            # Get top 5 authors
-            self.cursor.execute("""
-                SELECT author, COUNT(*) as message_count 
-                FROM messages 
-                WHERE author != '' 
-                GROUP BY author 
-                ORDER BY message_count DESC 
-                LIMIT 5
-            """)
-            top_authors = self.cursor.fetchall()
-            
+            self.cursor.execute("SELECT COUNT(*) FROM opportunities")
+            total = self.cursor.fetchone()[0]
+
+            self.cursor.execute(
+                """SELECT domain_topic, COUNT(*) as cnt
+                   FROM opportunities
+                   WHERE domain_topic IS NOT NULL
+                   GROUP BY domain_topic
+                   ORDER BY cnt DESC
+                   LIMIT 5"""
+            )
+            top_domains = self.cursor.fetchall()
+
             print(f"\n📊 Database Statistics:")
-            print(f"   • Total messages: {total_messages}")
-            print(f"   • Top 5 authors:")
-            for i, (author, count) in enumerate(top_authors, 1):
-                print(f"     {i}. {author}: {count} messages")
-                
+            print(f"   • Total opportunities: {total}")
+            print(f"   • Top domains:")
+            for i, (domain, count) in enumerate(top_domains, 1):
+                print(f"     {i}. {domain}: {count} records")
+
         except sqlite3.Error as e:
             print(f" Error getting stats: {e}")
-    
-    def show_stats(self):
-        """Alias for get_table_stats for compatibility"""
-        self.get_table_stats()
-    
+
     def execute_query(self, query, params=None):
-        """Execute a custom query"""
+        """Execute a custom SQL query."""
         try:
             if params:
                 self.cursor.execute(query, params)
             else:
                 self.cursor.execute(query)
-            
-            if query.strip().upper().startswith('SELECT'):
+
+            if query.strip().upper().startswith("SELECT"):
                 return self.cursor.fetchall()
             else:
                 self.connection.commit()
                 return self.cursor.rowcount
-                
+
         except sqlite3.Error as e:
             print(f" Query execution error: {e}")
             return None

@@ -14,22 +14,22 @@ def test_imports():
     """Test that all required modules can be imported"""
     try:
         from src.database import DatabaseManager
-        print("✅ DatabaseManager imported successfully")
+        print("DatabaseManager imported successfully")
         
         from src.core import parse_chat, is_system_message, save_messages_to_json, filter_and_insert_messages
-        print("✅ Core functions imported successfully")
+        print("Core functions imported successfully")
         
         # Test database connection
         db = DatabaseManager()
         if db.connect():
-            print("✅ Database connection successful")
+            print("Database connection successful")
             db.close()
         else:
-            print("❌ Database connection failed")
+            print("Database connection failed")
             
         return True
     except Exception as e:
-        print(f"❌ Import error: {e}")
+        print(f"Import error: {e}")
         return False
 
 def test_cli_help():
@@ -49,24 +49,24 @@ def test_cli_help():
             pass
         
         sys.argv = original_argv
-        print("✅ CLI help works correctly")
+        print("CLI help works correctly")
         return True
     except Exception as e:
-        print(f"❌ CLI help error: {e}")
+        print(f"CLI help error: {e}")
         return False
 
 if __name__ == "__main__":
-    print("🧪 Testing Updated Conversational Data Analysis System")
+    print("Testing Updated Conversational Data Analysis System")
     print("=" * 50)
     
-    print("\n📦 Testing Imports...")
+    print("\nTesting Imports...")
     imports_ok = test_imports()
     
-    print("\n🔧 Testing CLI...")
+    print("\nTesting CLI...")
     cli_ok = test_cli_help()
     
     print("\n" + "=" * 50)
     if imports_ok and cli_ok:
-        print("🎉 All tests passed! System is ready.")
+        print("All tests passed! System is ready.")
     else:
-        print("❌ Some tests failed. Check the errors above.")
+        print("Some tests failed. Check the errors above.")

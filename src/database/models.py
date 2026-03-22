@@ -1,33 +1,37 @@
 import sqlite3
 
+
 class DatabaseSchema:
     """Class containing SQL commands for SQLite database schema creation"""
-    
-    # Table creation command for SQLite
-    CREATE_RAW_TABLE = """
-    CREATE TABLE IF NOT EXISTS messages (
+
+    # Table creation command for SQLite - stores LLM-extracted opportunities
+    CREATE_OPPORTUNITIES_TABLE = """
+    CREATE TABLE IF NOT EXISTS opportunities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        time TEXT NOT NULL,
-        author TEXT NOT NULL,
-        content TEXT NOT NULL,
+        domain_topic TEXT,
+        location TEXT,
+        start_date TEXT,
+        duration TEXT,
+        mode TEXT,
+        pay TEXT,
+        contact TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
-    
+
     # Index creation for better performance
     CREATE_INDEXES = [
-        "CREATE INDEX IF NOT EXISTS idx_messages_date ON messages(date);",
-        "CREATE INDEX IF NOT EXISTS idx_messages_author ON messages(author);",
-        "CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);"
+        "CREATE INDEX IF NOT EXISTS idx_opportunities_domain ON opportunities(domain_topic);",
+        "CREATE INDEX IF NOT EXISTS idx_opportunities_location ON opportunities(location);",
+        "CREATE INDEX IF NOT EXISTS idx_opportunities_created_at ON opportunities(created_at);"
     ]
-    
+
     # Sample queries
-    GET_ALL_MESSAGES = "SELECT * FROM messages ORDER BY date, time;"
-    GET_MESSAGES_BY_AUTHOR = "SELECT * FROM messages WHERE author = ? ORDER BY date, time;"
-    GET_MESSAGES_BY_DATE_RANGE = "SELECT * FROM messages WHERE date BETWEEN ? AND ? ORDER BY date, time;"
-    SEARCH_MESSAGES = "SELECT * FROM messages WHERE content LIKE ? ORDER BY date, time;"
-    
+    GET_ALL_OPPORTUNITIES = "SELECT * FROM opportunities ORDER BY created_at DESC;"
+    GET_BY_DOMAIN = "SELECT * FROM opportunities WHERE domain_topic = ?;"
+    GET_BY_LOCATION = "SELECT * FROM opportunities WHERE location = ?;"
+    SEARCH_OPPORTUNITIES = "SELECT * FROM opportunities WHERE domain_topic LIKE ? OR location LIKE ? OR contact LIKE ?;"
+
     @staticmethod
     def create_all_indexes(cursor):
         """Create all indexes for better performance"""

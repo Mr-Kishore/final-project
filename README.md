@@ -5,19 +5,20 @@ Parse exported chat conversations, filter system noise, store messages in SQLite
 ## 🏗️ Professional Project Structure
 
 ```
-conversational_data_analysis/
+final-project/
 ├── main.py                 # Main entry point with CLI interface
 ├── requirements.txt        # Python dependencies
 ├── .env                    # Environment variables (copy from config/.env.example)
 ├── README.md              # This file
+├── test_updates.py        # Test script for updated functionality
 ├── src/                   # Source code
 │   ├── core/              # Core parsing logic
 │   │   └── parser.py      # Chat conversation parsing
 │   ├── database/          # Database layer
 │   │   ├── db_integration.py  # Database operations
 │   │   └── models.py      # Database schemas
-│   ├── gui/               # Desktop GUI
-│   │   └── app.py         # GUI application
+│   ├── gui/               # Web GUI
+│   │   └── streamlit_app.py  # Streamlit web application
 │   ├── llm/               # LLM integration
 │   │   └── extractor.py   # Opportunity extraction
 │   └── utils/             # Utility functions
@@ -40,8 +41,8 @@ conversational_data_analysis/
 
 ```bash
 # Create virtual environment
-source .venv/bin/actipython -m venv .venv
-vate  # Linux/Mac
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
 # or
 source .venv/Scripts/activate  # Windows
 
@@ -51,23 +52,24 @@ pip install -r requirements.txt
 # Setup environment variables
 cp config/.env.example .env
 # Edit .env if needed (SQLite works out of the box)
+
+# Test the installation (optional)
+python test_updates.py
 ```
 
 ### 2. Run the Application
 
-**Option A: Streamlit UI**
+**Option A: Streamlit Web UI**
 ```bash
-python main.py --gui
-# or directly
 streamlit run src/gui/streamlit_app.py
 ```
 
 **Option B: Command Line**
 ```bash
-# Parse chat and store in database
+# Parse chat and save to JSON
 python main.py --parse
 
-# Extract opportunities with LLM
+# Extract opportunities with LLM and save to database
 python main.py --llm
 ```
 
@@ -103,24 +105,32 @@ OLLAMA_HOST=http://localhost:11434
 ## 📁 Input/Output Files
 
 - **Input**: Place your chat export as `data/chat.txt`
-- **Outputs**: 
-  - `data/chat.json` - Parsed and filtered messages
-  - `data/job_details.json` - Extracted opportunities
+- **Intermediate Output**: 
+  - `data/chat.json` - Parsed and filtered messages (from --parse)
+- **Final Outputs**: 
+  - `data/job_details.json` - Extracted opportunities (from --llm)
+  - `data/conversational_analysis.db` - SQLite database with opportunities
 
 ## 🎯 Features
 
 1. **Smart Parsing**: Handles chat export format with multi-line messages
 2. **System Message Filtering**: Automatically removes group events, encryption notices, etc.
-3. **Database Integration**: Batch insertion into SQLite with proper schema
-4. **LLM Extraction**: Uses local Ollama models to extract job/training opportunities
-5. **Streamlit UI**: Web UI with file management and pipeline controls
-6. **CLI Support**: Command-line interface for automation
-7. **Professional Structure**: Clean, maintainable codebase following Python best practices
+3. **Two-Step Pipeline**: Parse to JSON first, then extract with LLM for better control
+4. **Database Integration**: Store extracted opportunities in SQLite with proper schema
+5. **LLM Extraction**: Uses local Ollama models to extract job/training opportunities
+6. **Streamlit Web UI**: Modern web interface with file management and database viewer
+7. **CLI Support**: Command-line interface for automation and scripting
+8. **Database Viewer**: Built-in UI to view, filter, and export opportunities
+9. **Professional Structure**: Clean, maintainable codebase following Python best practices
 
 ## 🧪 Testing
 
 Run the test suite:
 ```bash
+# Test core functionality
+python test_updates.py
+
+# Run unit tests
 python -m pytest tests/
 # or
 python -m unittest tests.test_parser
@@ -128,12 +138,17 @@ python -m unittest tests.test_parser
 
 ## 📊 Database Schema
 
-Messages are stored in SQLite database at `data/conversational_analysis.db`:
+Extracted opportunities are stored in SQLite database at `data/conversational_analysis.db`:
+
+**opportunities table:**
 - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-- `date` (TEXT) - Format: DD/MM/YY
-- `time` (TEXT) - Format: HH:MM:SS AM/PM
-- `author` (TEXT)
-- `content` (TEXT)
+- `domain_topic` (TEXT) - Domain or topic of the opportunity
+- `location` (TEXT) - Location information
+- `start_date` (TEXT) - Start date information
+- `duration` (TEXT) - Duration of the opportunity
+- `mode` (TEXT) - Online/offline mode
+- `pay` (TEXT) - Payment information
+- `contact` (TEXT) - Contact information
 - `created_at` (TIMESTAMP) - When record was inserted
 
 See `config/database.sql` for complete schema.
@@ -167,6 +182,8 @@ Uses Ollama with `llama3.2:3b` model by default to extract:
 - **Database errors**: SQLite creates database automatically, no setup needed
 - **Chat file not found**: Place export as `data/chat.txt`
 - **LLM errors**: Ensure Ollama is running and model is available
+- **Import errors**: Run `python test_updates.py` to verify installation
+- **Streamlit issues**: Make sure you have the correct dependencies installed
 
 ## 📚 Documentation
 
